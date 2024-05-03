@@ -145,12 +145,87 @@ def test_limitedcounter():
     counter.inc(7)
     assert counter.value == 10
 
+
+### decorators and Exceptions
+
+
+
+def suppress(errors, *, or_return=None):
+    def wrapper(function):
+        def inner(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except errors as e:
+                return or_return
+
+        return inner
+
+    return wrapper
+
+
+
+# BEGIN
+from functools import wraps
+
+def suppress_example(exception, *, or_return=None):
+    """Suppress exceptions of provided class(es) and return a value instead."""
+    def wrapper(function):
+        @wraps(function)
+        def inner(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except exception:
+                return or_return
+        return inner
+    return wrapper
+# END
+
+
+
+# tests
+
+def walk(path, structure):
+    """Walk down to structure using path."""
+    if not path:
+        return structure
+    key, *rest_path = path
+    return walk(rest_path, structure[key])
+
+
+def test_walk():
+    assert walk([0], 'Cat') == 'C'
+    assert walk(['a', 1], {'a': ('foo', 'bar')}) == 'bar'
+    assert walk(['x', 1, 0], {'x': ('foo', 'bar')}) == 'b'
+
+
+def test_suppress():
+    @suppress(ZeroDivisionError, or_return=0)
+    def safe_div(a, *, b):
+        return a // b
+
+    assert safe_div(10, b=3) == 3
+    assert safe_div(10, b=0) == 0
+
+
+def test_suppress_walk():
+    safe_walk = suppress((KeyError, IndexError))(walk)
+
+    assert safe_walk([1], "") is None
+    assert safe_walk(['a'], {}) is None
+    assert safe_walk([0, 0, 1], (("?", 100), 200)) is None
+
+
+
 def main():
     # test_counter()
     # test_clock()
-    test_counter2()
-    test_limitedcounter()
+    # test_counter2()
+    # test_limitedcounter()
 
+    # walk(path, structure)
+    test_walk()
+    test_suppress()
+    test_suppress_walk()
 
 
 if __name__ == '__main__':
