@@ -96,6 +96,48 @@ def get_all_products(conn):
 '''
 
 
+def get_order_sum(conn, month):
+    sql = '''
+    select c.customer_name as customer_name, sum(o.total_amount) as amount
+    from customers as c
+    left join orders as o
+        on o.customer_id = c.customer_id 
+    where DATE_PART('MONTH', o.order_date)=%s
+    group by c.customer_name;
+    '''
+    rows = []
+    with conn.cursor(cursor_factory=DictCursor) as curs:
+        curs.execute(sql, (month,))
+        res = curs.fetchall()
+        for customer in res:
+            rows.append(f"Покупатель {customer.get('customer_name')} совершил покупок на сумму {customer.get('amount')}")
+        return '\n'.join(rows)
+
+
+
+### CURSOR
+from psycopg2.extras import DictCursor
+
+def create_post(conn, post):
+    with conn.cursor(cursor_factory=DictCursor) as curs:
+        curs.execute(
+            'insert into posts (title, content, author_id) values (%s, %s, %s) RETURNING id;', 
+            (post.get('title'), post.get('content'), post.get('author_id'))
+        )
+        post_id = curs.fetchone()[0]
+        conn.commit()
+        return post_id
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
     '$ poetry run python create_table.py'
 

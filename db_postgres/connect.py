@@ -125,3 +125,37 @@ conn.close()
 # END
 
 
+
+# another way
+
+import os
+
+from dotenv import load_dotenv
+import numpy as np
+import pandas as pd
+from sqlalchemy import create_engine
+
+
+# creds from .env file
+load_dotenv()
+
+POSTGRES_HOST = os.getenv('POSTGRES_HOST')
+POSTGRES_PORT = os.getenv('POSTGRES_PORT')
+POSTGRES_USERNAME = os.getenv('POSTGRES_USERNAME')
+POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+POSTGRES_DBNAME = os.getenv('POSTGRES_DBNAME')
+
+
+# connection
+try:
+    conn = create_engine(f"postgresql://{POSTGRES_USERNAME}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DBNAME}")
+    print('connected!')
+except:
+    print('Can`t establish connection to database')
+
+
+# small function for selecting data
+def select(sql):
+    return pd.read_sql_query(sql, conn)
+
+#
